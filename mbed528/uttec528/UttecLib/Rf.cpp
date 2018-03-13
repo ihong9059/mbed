@@ -96,6 +96,7 @@ void Rf::initRf(channel_t* pCh)
 {
 	m_Ch=*pCh;
 	clock_initialization();
+//	m_Ch.dbm = dbm_m20;	//For rssi test
 	setRadio(m_Ch);
 	wait(0.002);
 	setRfMode(eRxMode);
@@ -349,7 +350,9 @@ void Rf::setHoppingCount(){
 	m_HoppingCount=DeHoppingChangeNum;
 }
 
-
+channel_t Rf::getRfFactor(){
+	return m_Ch;
+}
 
 
 

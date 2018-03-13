@@ -31,7 +31,7 @@ typedef enum{
 	dbm_m8=0xF8UL,
 	dbm_m12=0xF4UL,
 	dbm_m16=0xF0UL,
-	dbm_m20=0xECUL,
+	dbm_m20=0xECUL,		//rssi test gain
 	dbm_m30=0xD8UL,
 } TxDbm_t;
 

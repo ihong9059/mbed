@@ -8,9 +8,13 @@
 #include "pirAnalog.h"
 #include "volume.h"
 #include "photoAnalog.h"
+#include "eprom.h"
 
 PwmOut dimer(p0);
 UttecLed myLed;
+
+//static eprom testEp();
+
 
 DimmerRf* mSecExe::m_pRf = NULL;
 UttecDim_t mSecExe::sDim = {0,};
@@ -42,6 +46,8 @@ mSecExe::mSecExe(DimmerRf* pRf){
 }
 
 void mSecExe::procDim(){
+	eprom testEp;
+
 //	putchar('.');
 	static float fNow = 0;
 	bool bAct = false;
@@ -61,6 +67,7 @@ void mSecExe::procDim(){
 	
 	if(bAct){
 		dimer = (float)1.0 - sDim.pwm; 
+		testEp.writeByte02(0, 5);
 	}
 //	dimer = fNow;
 }

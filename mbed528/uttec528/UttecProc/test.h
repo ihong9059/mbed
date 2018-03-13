@@ -46,6 +46,8 @@ public:
 	void testRealAscii();
 	void testMonitor();
 	void testSchedule();
+//	void testRssiReceive(DimmerRf*);
+	void testRssiReceive();
 };
 
 

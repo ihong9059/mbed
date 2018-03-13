@@ -1,9 +1,0 @@
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecApp\DimmerRf.cpp
-.\build\dimmerrf.o: mbed_config.h
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecApp\DimmerRf.h
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecLib\Rf.h
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecLib\Flash.h
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecLib\Channel.h
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecLib\Random.h
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecApp\UttecUtil.h
-.\build\dimmerrf.o: ..\..\mbed528\uttec528\UttecLib\radio_config.h

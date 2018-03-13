@@ -300,7 +300,7 @@ void Rcu::procRcu(rcuValue_t value)
 		case rMute: printf("rMute\n\r"); 
 		break;
 		case rOne: printf("rOne\n\r"); 
-			uiNum *= 10; uiNum += 1;
+			myTest.testRssiReceive(); 
 		break;
 		case rTwo: printf("rTwo\n\r"); 
 			uiNum *= 10; uiNum += 2;

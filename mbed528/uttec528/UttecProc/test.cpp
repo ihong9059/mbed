@@ -16,19 +16,47 @@ mSecExe* test::pMy_mSec = NULL;
 procServer* test::pMyServer = NULL;
 //simSx* test::pMySim = NULL;
 
+static Timeout testTimeout;
+
 test::test(){
 }
 void test::setTest(uttecLib_t pLib, procServer* pServer){
 	mpFlash = pLib.pFlash;
 	mpFlashFrame = mpFlash->getFlashFrame();
 	mp_rfFrame = &mpFlashFrame->rfFrame;
-/*	
 	pMyRf = pLib.pDimmerRf;
+/*	
 	pMy485 = pLib.pRs485;
 	pMyBle = pLib.pBle;
 	pMy_mSec = pLib.pMsec;
 	pMyServer = pServer;
 	*/
+}
+#define DeReceiveChannel 100
+#define DeTransmitChannel 101
+
+//void test::testRssiReceive(DimmerRf* pRf){
+static bool testFlag = false;
+static void testTimeoutProc(){
+	testFlag = false;
+}
+void test::testRssiReceive(){
+	UttecUtil myUtil;
+	pMyRf->changeGroup(DeReceiveChannel);
+	pMyRf->sendRf(mp_rfFrame);
+	testTimeout.attach(&testTimeoutProc, 5);
+	testFlag = true;	
+	uint8_t ucResult = 0;
+	while(testFlag){
+		myUtil.setWdtReload();
+		if(pMyRf->isRxDone()){			
+			printf("Received = %d \r\n", pMyRf->returnRxBuf()->Trans.DstGroupAddr);		
+			pMyRf->clearRxFlag();
+			ucResult++;
+		}
+	}
+	if(ucResult>3) printf("Ok Rf Communication:%d\r\n",ucResult);
+	else printf("Rf Communication Error:%d\r\n", ucResult);
 }
 
 void test::setTestRfData(){		

@@ -167,8 +167,8 @@ void procRf::processCmdNewSet(rfFrame_t* sFrame){
 			break;	
 	}
 	
-	tempFrame->Ctr.High =	sFrame->Ctr.High*100/255;
-	tempFrame->Ctr.Low =	sFrame->Ctr.Low*100/255;
+	tempFrame->Ctr.High =	sFrame->Ctr.High;
+	tempFrame->Ctr.Low =	sFrame->Ctr.Low;
 	tempFrame->Ctr.SensorRate =	sFrame->Ctr.SensorRate;
 	tempFrame->Ctr.DTime=	sFrame->Ctr.DTime;
 	printf("high, low = %d, %d\r\n", tempFrame->Ctr.High, tempFrame->Ctr.Low);

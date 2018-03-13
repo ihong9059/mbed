@@ -103,9 +103,6 @@ simSx mySim(&myRf);
 	while(1);
 #endif
 
-/*
-*/
-	
 	myUtil.setWdt(6);	
 	Rcu myRcu;	
 	myTest.setTest(myLib, &mProcServer);
@@ -115,6 +112,7 @@ simSx mySim(&myRf);
 UttecLed myLed;
 //eprom myRom;
 //	myRom.test256Byte(0,16);
+	
 	while(true){
 		myUtil.setWdtReload();
 		
@@ -123,8 +121,6 @@ UttecLed myLed;
 			rcuValue_t myCode;
 			myRcu.clearRcuFlag();
 			myCode = (rcuValue_t)myRcu.returnRcuCode(); 
-	
-			pMyFrame->MyAddr.RxTx.iRxTx = myRcu.forTest(myCode);
 			myRcu.procRcu(myCode);
 		}
 
@@ -134,7 +130,9 @@ UttecLed myLed;
 			myRf.clearRxFlag();
 			rfFrame_t* pFrame = myRf.returnRxBuf();
 			myUtil.dispCmd(pFrame);
-			mProcRf.taskRf(pFrame);			
+			mProcRf.taskRf(pFrame);		
+			
+			printf("Count = %d\r\n", 	pFrame->Trans.DstGroupAddr);
 		}
 		
 		if(mProcSec.m_product.sx1276)
@@ -174,11 +172,12 @@ UttecLed myLed;
 			my_mSec.msecTask(pMyFrame);
 		}
 		
-		if(tick_Sec){	
-			
+		if(tick_Sec){		
+			static	uint16_t uiRssiCount = 0;
 			tick_Sec = false;			
 			mProcSec.secTask(pMyFrame);	
 			myLed.blink(eSensLed, eRfBlink);
+			
 //			myLed.blink(eRfLed, eRfBlink);
 //			my_mSec.setDirectDim(0.3);
 			

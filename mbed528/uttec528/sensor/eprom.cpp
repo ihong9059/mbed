@@ -131,6 +131,7 @@ int eprom::writeByte256(uint16_t iAddr, char cData)
 	epAddrData.data = cData;
 	int iResult = 0;
 	if(at24.write(DeEpromAddr,(char*)&epAddrData,3,false)){
+//		putchar('.');
 		printf("Error i2c writeByte256: %d\n\r",iAddr);
 		iResult = 1;
 	}
