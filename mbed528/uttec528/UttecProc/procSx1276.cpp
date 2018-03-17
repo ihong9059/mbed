@@ -12,8 +12,10 @@ rfFrame_t* procSx1276::mp_rfFrame = NULL;
 DimmerRf* procSx1276::pMyRf = NULL;
 rs485* procSx1276::pMy485 = NULL;
 
+//for mbed 
 simSx* procSx1276::pMySx1276 = NULL;
 //sx1276Exe* procSx1276::pMySx1276 = NULL;
+
 UttecBle* procSx1276::pMyBle = NULL;
 mSecExe* procSx1276::pMy_mSec = NULL;
 procServer* procSx1276::pMyServer = NULL;
@@ -91,10 +93,15 @@ void procSx1276::setSimulationData(){
 }
 
 void procSx1276::sendSxFrame(rfFrame_t* pFrame){
+	
 	sxTxFrame_t sTxFrame;
 	sTxFrame.ptrBuf = (sxFrame_t*)pFrame;
+	uint8_t* pCrc = (uint8_t*)pFrame;
+	sTxFrame.ptrBuf->time = myUtil.gen_crc16(pCrc, 16);
+	sTxFrame.ptrBuf->crc = myUtil.gen_crc16(pCrc, sizeof(sxFrame_t)-2);
 	sTxFrame.size = sizeof(sxFrame_t);
 	pMySx1276->sendLoRa(sTxFrame);
+	pMy_mSec->setNoiseBlockTime(DeSx1276NoiseTime);
 }
 
 bool procSx1276::isMyGroup(rfFrame_t* pSrc, rfFrame_t* pMy){
@@ -108,7 +115,24 @@ rfFrame_t* procSx1276::readSxFrame(){
 	sxFrame_t* psxFrame = psxRxFrame->ptrBuf;
 	return (rfFrame_t*)psxFrame;
 }
-
+/*
+bool procSx1276::isSxRxDone(){	//to be mbed
+	sxRxFrame_t* psxRxFrame = pMySx1276->readLoRa();
+	uint8_t* pFrame = (uint8_t*)psxRxFrame->ptrBuf;
+	uint16_t myCrc = 
+		myUtil.gen_crc16(pFrame, sizeof(sxFrame_t)-2);
+	uint16_t orgCrc = psxRxFrame->ptrBuf->crc;
+	if(myCrc != orgCrc){
+		printf("------------ Crc Error:%d, %d\r\n", myCrc, orgCrc);
+		return false;
+	}
+	else{
+		printf("************ Crc Ok\r\n");
+		psxRxFrame->sxRxFlag = false;
+		return true;
+	}
+}
+*/
 void procSx1276::processCmdNewSet(rfFrame_t* sFrame){
 	printf("NewSet\n\r");
 	Flash myFlash;
@@ -266,37 +290,20 @@ void procSx1276::sx1276Task(rfFrame_t* pFrame){
 	bool bSetOk = false;	
 	uint8_t ucCmd = pFrame->Cmd.Command;
 	printf("sx1276Task --> ");
+	
 	switch(ucCmd){
 		case edDummy:
+			printf("End of edDummy\n\r");
 				break;
 		case edSensor:
-			procSensorCmd(pFrame);
-				break;
 		case edRepeat:
-			printf("End of edRepeat\n\r");
-				break;
 		case edLifeEnd:
-				break;
 		case edNewSet:
-				break;
 		case edNewSetAck:
-				break;
 		case edSearch:
-			printf("End of edSearch???\n\r");
-//			searchSx1276(pFrame);
-				break;
 		case edBack:
-				break;
 		case edAsk:
-				break;
 		case edVolume:
-			if(myUtil.isMstOrGw(mp_rfFrame)){
-				printf("transferMstGwBy485 -->");
-				transferMstGwBy485(pFrame, eDown);
-				return;
-			}			
-			procVolumeCmd(pFrame);
-				break;
 		case edDayLight:
 				break;
 		
@@ -351,3 +358,43 @@ void procSx1276::sx1276Task(rfFrame_t* pFrame){
 			break;
 	}
 }
+
+#define DeLoRaTestChannel 101
+#define DeLoRaTestTimeout 3		//5cycle/sec
+#define DeLoRaTestCount 10
+
+static Timeout testTimeout;
+static bool testFlag = false;
+static void testTimeoutProc(){
+	testFlag = false;
+}
+
+void procSx1276::testLoRaReceive(){
+	printf("I'm ready for test LoRaReceive ++++++++++++++++++\r\n");
+	UttecUtil myUtil;
+	testTimeout.attach(&testTimeoutProc, DeLoRaTestTimeout);
+	testFlag = true;	
+	uint8_t ucResult = 0;
+	while(testFlag){
+		myUtil.setWdtReload();
+		if(pMySx1276->isSxRxDone()){			
+			pMySx1276->clearSxRxFlag();
+			rfFrame_t sxRfFrame = *(rfFrame_t*)pMySx1276->readLoRa()->ptrBuf;
+			printf("++++++++++Cmd = %d, Time:%d \n\r", 
+				sxRfFrame.Cmd.Command, sxRfFrame.Trans.DstGroupAddr);
+			ucResult++;
+		}
+	}
+	if(ucResult>DeLoRaTestCount) printf("Ok LoRa Communication:%d\r\n",ucResult);
+	else printf("Rf Communication Error:%d\r\n", ucResult);
+//	pMyRf->changeGroup(mp_rfFrame->MyAddr.GroupAddr);
+//	pMyRf->sendRf(mp_rfFrame);
+}
+
+void procSx1276::changeGroup(uint16_t uiGid){
+	pMySx1276->initSx1276(uiGid);
+	wait(0.1);
+	printf("Sx1276 changeGroup %d\r\n", uiGid);
+}
+
+

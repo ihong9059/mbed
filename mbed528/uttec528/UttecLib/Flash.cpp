@@ -184,11 +184,14 @@ Flash_t* Flash::getFlashFrame(){
 #define DeLifeEnd	43800	//356*24*5
 //#define DeLifeEnd	10	//Test
 void Flash::resetFlash(){
+	/*
 	uint8_t* ucpFrame=(uint8_t*)getFlashFrame();
 	for(int i=0;i<sizeof(Flash_t);i++) *ucpFrame++=0;	
 	writeFlash();
 	wait(0.5);
+	*/
 	printf("End of resetFlash();\n\r");
+	initOrgFlash();
 	while(1);
 //	NVIC_SystemReset();
 }
@@ -204,7 +207,8 @@ void Flash::initOrgFlash(){
 	rfFrame = rfFrame;
 	
 //	rfFrame.MyAddr.GroupAddr=DeFactoryChannel;		//For Test Only
-	rfFrame.MyAddr.GroupAddr=2;		//For Test Only
+//	rfFrame.MyAddr.GroupAddr=100;		//For Test Only
+	rfFrame.MyAddr.GroupAddr=42;		//For Test Only
 	rfFrame.MyAddr.PrivateAddr=10;
 	rfFrame.MyAddr.Micom.Bit.nRf518=1;
 	
@@ -212,15 +216,19 @@ void Flash::initOrgFlash(){
 	rfFrame.MyAddr.RxTx.iRxTx=eTx;
 	rfFrame.MyAddr.SensorType.iSensor=ePir;
 #else	
-	rfFrame.MyAddr.RxTx.iRxTx=eSRx;
-	rfFrame.MyAddr.SensorType.iSensor=eNoSensor;
+	rfFrame.MyAddr.RxTx.iRxTx=eRx;
+	rfFrame.MyAddr.SensorType.iSensor=ePir;
 #endif
 	
 	rfFrame.Ctr.High=100;
-	rfFrame.Ctr.Low=0;
+	rfFrame.Ctr.Low=11;
 	rfFrame.Ctr.Level=0;
 	rfFrame.Ctr.SensorRate=1;
-	rfFrame.Ctr.DTime=1;
+	
+	if(rfFrame.MyAddr.SensorType.iSensor != eDayLight)
+	rfFrame.Ctr.DTime = 1;
+	else
+	rfFrame.Ctr.DTime = 400;
 		
 	m_flash.rfFrame=rfFrame;
 	
@@ -245,9 +253,35 @@ void Flash::initOrgFlash(){
 	m_Ch.channel=rfFrame.MyAddr.GroupAddr;
 
 	m_flash.Channel=m_Ch;
-	wait(0.1);
+	m_flash.Hardware = 0;
+	
+	Rand myRnd(p2);
+	
+	m_flash.MacAddr = myRnd.getMacAddr();
+	printf("++++++++++++++++++++++++++++++\n\r");
+	printf("Flash Write Mac Address:\n\r");
+	for(int i = 0; i<6; i++){
+		printf("Mac[%d]:%x, ",i ,m_flash.MacAddr.mac[i]);
+	}
+	printf("\r\n");
+		
+	wait(1.1);
 //	nrf_delay_ms(100);
 	writeFlash();
 	
 //	NVIC_SystemReset();
+}
+
+void Flash::isHardwareOk(){
+	while(m_flash.Hardware){	
+		printf("Hardware Error = %d\r\n", m_flash.Hardware);
+		wait(1);
+	}
+}
+
+void Flash::setHardwareError(uint16_t uiError){
+	m_flash.Hardware = uiError;
+	wait(0.1);
+	writeFlash();	
+	wait(0.1);
 }

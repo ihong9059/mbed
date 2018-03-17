@@ -13,16 +13,6 @@ UttecBle* procSec::pMyBle = NULL;
 mSecExe* procSec::pMy_mSec = NULL;
 procServer* procSec::pMyServer = NULL;
 
-productType_t procSec::m_product = {0,};
-
-void procSec::setProductType(){
-	m_product.rcu = true;
-	m_product.rf = true;
-	m_product.ble	= false;
-	m_product.rs485 = true;
-	m_product.sx1276 = false;
-}
-
 procSec::procSec(uttecLib_t pLib, procServer* pServer){
 	mpFlash = pLib.pFlash;
 	mpFlashFrame = mpFlash->getFlashFrame();
@@ -33,7 +23,6 @@ procSec::procSec(uttecLib_t pLib, procServer* pServer){
 	pMyBle = pLib.pBle;
 	pMy_mSec = pLib.pMsec;
 	pMyServer = pServer;
-	setProductType();
 }
 //eRpt, eSRx, eTx, eRx, eMst, eGw
 #define testCount 7
@@ -75,11 +64,10 @@ void procSec::proc1Sec(){
 
 #include "UttecLed.h"
 static Serial myUart(p9, p11);
+
 void procSec::secTask(rfFrame_t* pFrame){
 	UttecUtil myUtil;	
-//	testFrame(pFrame);
 	if(myUtil.isFactoryOutMode()){
-//		pMy_mSec->setForcedDim(DeLampTtest);
 		pMy_mSec->setForcedDim(pFrame->Ctr.High/100.0);
 	}
 //	printf("Freq = %d\r\n", NRF_RADIO->FREQUENCY);

@@ -81,9 +81,10 @@ typedef struct{
 	uint16_t srcGid;
 	uint16_t dstGid;
 	uint8_t mac[6];
+	uint16_t crc;
+/*
 	uint8_t zone;
 	uint8_t sum;
-/*
 	*/
 } sxFrame_t;
 
@@ -116,7 +117,7 @@ public:
 	void sendLoRa(sxTxFrame_t sFrame);
 	sxRxFrame_t* readLoRa();
 	void initSx1276();
-	void initSx1276(uint8_t ucCh);
+	void initSx1276(uint16_t ucCh);
 	void testTxRx(uint32_t);
 	void clearSxRxFlag();
 	bool isSxRxDone();

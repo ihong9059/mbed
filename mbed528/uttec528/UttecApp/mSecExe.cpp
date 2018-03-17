@@ -8,13 +8,10 @@
 #include "pirAnalog.h"
 #include "volume.h"
 #include "photoAnalog.h"
-#include "eprom.h"
+#include "dac.h"
 
 PwmOut dimer(p0);
 UttecLed myLed;
-
-//static eprom testEp();
-
 
 DimmerRf* mSecExe::m_pRf = NULL;
 UttecDim_t mSecExe::sDim = {0,};
@@ -22,10 +19,15 @@ UttecDim_t mSecExe::sDim = {0,};
 eSensorType_t mSecExe::m_sensorType = ePir;
 
 bool mSecExe::m_sensorFlag = false;
+uint32_t mSecExe::m_noiseBlockTime = 0;
 
 pirAnalog pirA;
 volume vol;
 photoAnalog photoA;
+
+void mSecExe::setNoiseBlockTime(uint32_t ulTime){
+	m_noiseBlockTime = ulTime;
+}
 
 mSecExe::mSecExe(){
 }
@@ -37,8 +39,8 @@ mSecExe::mSecExe(DimmerRf* pRf){
 //	pyFrame->Ctr.SensorRate = 5;
 	pirA.setSensorRate(pyFrame->Ctr.SensorRate/100.0);
 	vol.setSensorRate(pyFrame->Ctr.SensorRate/100.0);
-	photoA.setSensorRate(0.2);
-//	photoA.setSensorRate(pyFrame->Ctr.DTime/1024.0);
+//	photoA.setSensorRate(0.2);
+	photoA.setSensorRate(pyFrame->Ctr.DTime/1024.0);
 	m_pRf = pRf;
 	dimer.period_us(300);		//set Pwm Freq
 //	dimer.period_us(25);		//set Pwm Freq
@@ -46,10 +48,10 @@ mSecExe::mSecExe(DimmerRf* pRf){
 }
 
 void mSecExe::procDim(){
-	eprom testEp;
+	dac testEp;
 
 //	putchar('.');
-	static float fNow = 0;
+	static float fNow = 0.5;
 	bool bAct = false;
 	
 	if(sDim.target >= fNow){
@@ -66,24 +68,31 @@ void mSecExe::procDim(){
 	sDim.current = fNow;
 	
 	if(bAct){
+//		putchar('*');
 		dimer = (float)1.0 - sDim.pwm; 
-		testEp.writeByte02(0, 5);
+		if(testEp.m_enableFlag)
+			testEp.writeDac(sDim.pwm);
 	}
 //	dimer = fNow;
 }
 
 void mSecExe::switchDimType(rfFrame_t* pFrame){
+	dac testEp;
 	static uint32_t ulCount = 0;
 	if(sDim.forced){	//when forced Mode
 		if((ulCount++%20)) return;
-		dimer = sDim.target;
+		dimer = (float)1.0 - sDim.target;
 		sDim.pwm = sDim.target;
+		if(testEp.m_enableFlag)
+			testEp.writeDac(sDim.pwm);
 		return;
 	}
 	switch(m_sensorType){
-		case ePir:
+		case ePir:	
+//			putchar('.');
 			if(sDim.dTime) sDim.dTime--;
 			else{	//when Delay Time out
+//				putchar('*');
 				sDim.target = (float)pFrame->Ctr.Low/(float)100.0;
 			}
 			sDim.upStep = 0.005;
@@ -131,8 +140,9 @@ void mSecExe::switchSensorType(rfFrame_t* pFrame){
 					ulTimeout = TimeoutForPirRepeat; //0.5Sec
 					sDim.target = pFrame->Ctr.High/100.0;
 					sDim.dTime = pFrame->Ctr.DTime*1000;
+					
 					printf("\n\rFrom Pir:");
-//					printf("\n\r***************target = %0.3f\n\r", sDim.target);
+//					printf("\n\r***************target = %0.3f, %d\n\r", sDim.target, sDim.dTime);
 					pFrame->Cmd.Command = edSensor;
 					setSensorFlag();
 					myMon.setTrafficFlag();
@@ -144,7 +154,6 @@ void mSecExe::switchSensorType(rfFrame_t* pFrame){
 				m_sensorType = eTestMode;		
 				if(!ulTimeout){
 					ulTimeout=500;
-//					printf("pwm = %f, %f\r\n",sDim.target, sDim.current);
 				}
 			break;
 		case eVolume:
@@ -173,25 +182,20 @@ void mSecExe::switchSensorType(rfFrame_t* pFrame){
 //			if(photoA.procPhotoA(ePhotoDigital)&&pFrame->MyAddr.RxTx.Bit.Tx){
 				m_sensorType = eDayLight;		
 				photoA.clearSensorFlag();	
-//				putchar('.');
-//				printf("photoA \r\n");
 				if(!ulTimeout){
-//					printf("&&&&&&&&&&&&ulTimeout:%d\r\n", ulTimeout);
-				float delayTime = 60;  //20Sec	
-				float delta = (1.0*TimeoutForPhotoRepeat)/(1000.0*delayTime);	
 					if(photoA.getDir() == eUp){
 						printf("--Up\r\n");
 						if(sDim.target < 1.0) 
-							sDim.target = sDim.target + delta; //10Sec
-							if(sDim.target > 1.0) sDim.target = 1.0;
+							sDim.target = sDim.target + 0.01; //10Sec
+						else sDim.target = 1.0;
 					}
 					else{
 						printf("--Down\r\n");
 						if(sDim.target > 0.0) 
-							sDim.target = sDim.target - delta;	//Max 10Sec
-							if(sDim.target < 0.0) sDim.target = 0.0;
+							sDim.target = sDim.target - 0.01;	//Max 10Sec
+						else sDim.target = 0.0;
 					}	
-					printf("pwm = %f\r\n", sDim.current);	
+					printf("pwm = %f, target = %f\r\n", sDim.current, sDim.target);	
 					ulTimeout = TimeoutForPhotoRepeat; //0.5Sec	
 					setSensorFlag();
 					pFrame->Ctr.Level = sDim.target*100;
@@ -209,17 +213,17 @@ void mSecExe::switchSensorType(rfFrame_t* pFrame){
 	}
 }
 
-void mSecExe::msecTask(rfFrame_t* pFrame){
+void mSecExe::msecTask(rfFrame_t* pFrame){	//mSecStart
 	UttecUtil myUtil;	
 	static uint32_t ulCount = 0;	
 	static bool isRealMode = true;
 	
 	ulCount++;
+	if(m_noiseBlockTime) m_noiseBlockTime--;
 	
 	if(!myUtil.isMstOrGw(pFrame)){
-		if(isRealMode)
+		if(isRealMode&&(!m_noiseBlockTime))
 			switchSensorType(pFrame);
-//		if(0) //for test 20180303
 		switchDimType(pFrame);
 	}
 	myLed.taskLed();

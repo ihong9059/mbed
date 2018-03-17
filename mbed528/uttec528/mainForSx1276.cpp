@@ -44,31 +44,39 @@ static void tickSec(){
 static void tickmSec(){
 	tick_mSec = true;
 }
-
+#include "dac.h"
+dac myDac;
+/*
+#include "Rand.h"
+#include "nrf_ble_gap.h"
+*/
 int main(void)
 {
 Serial Uart(p9,p11);
 	uttecLib_t myLib;	
 	Uart.baud(115200);	
-	
 	printf("\n\rNow New nrf51822 2018.01.15 11:00\n\r");
 	printf("bsl Manual Control\n\r");
-	
-	ble_gap_addr_t addr;
-	for(int i=0; i<sizeof(addr.addr); i++) 
-		addr.addr[i] = i*7;
-		
+
 	myFlash.ReadAllFlash();	
 	Flash_t* pFlash = myFlash.getFlashFrame();
 	rfFrame_t* pMyFrame=&pFlash->rfFrame;
 	
 	myFlash.isFactoryMode();
 	
+	printf("From Flash Mac Address:\n\r");
+	for(int i = 0; i<6; i++){
+		printf("Mac[%d]:%x, ",i ,pFlash->MacAddr.mac[i]);
+	}
+	printf("\r\n");
+	
 	printf("My Gid =%d, %f\n\r", pMyFrame->MyAddr.GroupAddr,
 		pFlash->VolumeCheck);
 	printf("high =%d, low =%d\n\r", pMyFrame->Ctr.High,
 		pMyFrame->Ctr.Low);
 
+//	while(1);
+	
 	UttecUtil myUtil;
 	DimmerRf myRf(&myFlash);
 	myRf.initRfFrame(); 
@@ -96,27 +104,27 @@ simSx mySim(&myRf);
 	procSec mProcSec(myLib, &mProcServer);
 	procSx1276 mProcSx1276(myLib, &mProcServer);
 
-//#define DeFlash 1
+	mProcSx1276.changeGroup(pMyFrame->MyAddr.GroupAddr);
 
-#ifdef DeFlash 	
+//#define DeFlashInit 1
+#ifdef DeFlashInit 	
 	myFlash.resetFlash();	
-	while(1);
 #endif
 
-	myUtil.setWdt(6);	
 	Rcu myRcu;	
 	myTest.setTest(myLib, &mProcServer);
 	
-//	pFrame->MyAddr.SensorType.iSensor = eNoSensor;
-//	pMyFrame->MyAddr.SensorType.iSensor = ePir;	//ePir, eDayLight
 UttecLed myLed;
-//eprom myRom;
-//	myRom.test256Byte(0,16);
+	myUtil.setProductType();
 	
+	myFlash.isHardwareOk();	
+//	myFlash.setHardwareError(100);
+	
+	myUtil.setWdt(6);	
 	while(true){
 		myUtil.setWdtReload();
 		
-		if(mProcSec.m_product.rcu)
+		if(myUtil.m_product.rcu)
 		if(myRcu.isRcuReady()){
 			rcuValue_t myCode;
 			myRcu.clearRcuFlag();
@@ -124,7 +132,7 @@ UttecLed myLed;
 			myRcu.procRcu(myCode);
 		}
 
-		if(mProcSec.m_product.rf)
+		if(myUtil.m_product.rf)
 		if(myRf.isRxDone()){		//For Rf Receive
 			myLed.blink(eRfLed, eRfBlink);
 			myRf.clearRxFlag();
@@ -132,29 +140,37 @@ UttecLed myLed;
 			myUtil.dispCmd(pFrame);
 			mProcRf.taskRf(pFrame);		
 			
-			printf("Count = %d\r\n", 	pFrame->Trans.DstGroupAddr);
+//			printf("Count = %d\r\n", 	pFrame->Trans.DstGroupAddr);
 		}
-		
-		if(mProcSec.m_product.sx1276)
+/*		
+		static uint32_t ulBlock = 0;
+		if(0)
+		if(myUtil.m_product.sx1276)
 		if(mySim.isSxRxDone()){		//For sx1276 Receive
 			printf("-------------isSxRxDone\n\r");
 			mySim.clearSxRxFlag();
+			
 			rfFrame_t* psRf = mProcSx1276.readSxFrame();
 			sxFrame_t* psx = (sxFrame_t*)psRf;
+			uint8_t* pMyCrc = (uint8_t*)psx;
+			uint16_t myCrc = myUtil.gen_crc16(pMyCrc, sizeof(sxFrame_t)-2);
+			if( psx->crc  != myCrc) printf("--------- Crc Error: %d, %d\r\n",
+				psx->crc, myCrc);
+			
 			printf("gid = %d, %d\n\r", psRf->MyAddr.GroupAddr, 
 				psRf->Ctr.Level);
 			printf("\n\r");
 			if(mProcSx1276.isMyGroup(pMyFrame, psRf))
 				mProcSx1276.sx1276Task(psRf);
 		}
-		
-		if(mProcSec.m_product.rs485)
+		if(myUtil.m_product.rs485)
 		if(my485.is485Done()){		//For rs485 Receive			
 			my485.clear485Done();
 			rfFrame_t* p485Frame = my485.return485Buf();
 			mProc485.rs485Task(p485Frame);
 //			my485.send485(pMyFrame, eRsDown);	//For Test Only
 		}		
+*/		
 				
 		if(my_mSec.returnSensorFlag()){		//For sensor Receive
 			my_mSec.clearSensorFlag();
@@ -173,11 +189,10 @@ UttecLed myLed;
 		}
 		
 		if(tick_Sec){		
-			static	uint16_t uiRssiCount = 0;
 			tick_Sec = false;			
 			mProcSec.secTask(pMyFrame);	
-			myLed.blink(eSensLed, eRfBlink);
-			
+//			myLed.blink(eSensLed, eRfBlink);
+//			printf("db = %x\r\n",myRf.getRfFactor().dbm);
 //			myLed.blink(eRfLed, eRfBlink);
 //			my_mSec.setDirectDim(0.3);
 			

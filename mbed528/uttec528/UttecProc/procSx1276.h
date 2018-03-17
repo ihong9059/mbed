@@ -10,9 +10,11 @@
 #include "procServer.h"
 #include "CmdDefine.h"
 
+//for mbed 
 #include "simSx.h"
 
 #define DeSx1276SetTimeout	10
+#define DeSx1276NoiseTime 100	//100mSec
 
 class procSx1276
 {
@@ -23,6 +25,7 @@ private:
 	static DimmerRf* pMyRf;
 	static rs485* pMy485;
 
+//for mbed 
 	static simSx* pMySx1276;
 //	static sx1276Exe* pMySx1276;
 
@@ -49,6 +52,9 @@ public:
 	rfFrame_t* readSxFrame();
 	void searchSx1276(rfFrame_t*);
 	void processCmdNewSet(rfFrame_t*);
+	void testLoRaReceive();
+	void changeGroup(uint16_t);
+	bool isSxRxDone();
 };
 
 #endif

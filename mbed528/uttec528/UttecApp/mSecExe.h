@@ -61,6 +61,7 @@ class mSecExe
 private:
 	static DimmerRf* m_pRf;
 	static bool m_sensorFlag;
+	static uint32_t m_noiseBlockTime;
 
 	void switchSensorType(rfFrame_t*);
 	void procDim();
@@ -82,6 +83,7 @@ public:
 	void setForcedDim(float level);
 	void setUnforcedDim();
 	void setDirectDim(float);
+	void setNoiseBlockTime(uint32_t);
 };
 
 #endif

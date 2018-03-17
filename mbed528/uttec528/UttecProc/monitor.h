@@ -17,12 +17,16 @@ class monitor
 {
 private:
 public:	
+	static eMonitor_t m_monitorResult;
+	static bool m_lampOk;
+
 	monitor();
-	bool returnMonitor();
+	bool isLampOk();
 	uint32_t getTraffic();
 	void setTrafficFlag();
 	bool getTrafficCountFlag();
 	void clearTrafficCountFlag();
+	eMonitor_t reportMonitorResult();
 };	
 
 #endif

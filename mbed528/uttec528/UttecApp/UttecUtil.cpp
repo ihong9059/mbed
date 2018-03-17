@@ -4,6 +4,16 @@
 
 dimFactors_t UttecUtil::myDimFact = {0,};
 
+productType_t UttecUtil::m_product = {0,};
+
+void UttecUtil::setProductType(){
+	m_product.rcu = true;
+	m_product.rf = true;
+	m_product.ble	= false;
+	m_product.rs485 = true;
+	m_product.sx1276 = true;
+}
+
 UttecUtil::UttecUtil(){
 }
 	
@@ -124,7 +134,7 @@ void dispTime(uint32_t ulTime){
 	myTime.tm_min = (ulTime/60)%60;
 	myTime.tm_hour = (ulTime/3600)%24;
 	myTime.tm_mday = ulTime/(3600*24);
-	printf(":: %d:%d:%d:%d\n\r", myTime.tm_mday,
+	printf("::T-> %d:%d:%d:%d\n\r", myTime.tm_mday,
 	myTime.tm_hour, myTime.tm_min, myTime.tm_sec);
 }
 char* dispForced(bool bForced){
@@ -153,7 +163,8 @@ void UttecUtil::dispSec(rfFrame_t* pFrame, bool bCount){
 	dispRxTx(pFrame->MyAddr.RxTx.iRxTx));
 	printf(" S:%s\r\n",
 	dispSensor(pFrame->MyAddr.SensorType.iSensor));
-	printf("H:%d, L:%d ", pFrame->Ctr.High, pFrame->Ctr.Low);
+	printf("H:%d, L:%d, Le:%d, D:%d ", pFrame->Ctr.High,
+		pFrame->Ctr.Level ,pFrame->Ctr.Low, pFrame->Ctr.DTime );
 	dispTime(ulTime);
 		
 	if(!isMstOrGw(pFrame)){	
@@ -417,4 +428,23 @@ void UttecUtil::alertFaultSet(uint8_t ucFrom){
 	}
 }
 
+bool UttecUtil::SxRxCrc(rfFrame_t* pFrame){
+	uint8_t* pucCrc = (uint8_t*)pFrame;
+	uint16_t puiTime = *(uint16_t*)(pucCrc + 16);
+	uint16_t puiCrc = *(uint16_t*)(pucCrc + 30);
+	
+	if(puiTime != gen_crc16(pucCrc, 16)){ 
+		printf("_______time CRC Error, %d, %d\r\n",
+		puiTime,gen_crc16(pucCrc, 16));
+		return false;
+	}	
+	pucCrc = (uint8_t*)pFrame;
+	if(puiCrc != gen_crc16(pucCrc, 30)){
+		printf("++++++time CRC Error, %d, %d\r\n",
+		puiCrc,gen_crc16(pucCrc, 30));
+		return false;
+	}
+	return true; 
+
+}
 

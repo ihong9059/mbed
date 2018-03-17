@@ -7,6 +7,9 @@
 #include "UttecUtil.h"
 //monitor_t monitor::m_monitor = {0,};
 
+eMonitor_t monitor::m_monitorResult = eMNoProblem;
+bool monitor::m_lampOk = true;
+
 static Timeout monitorT;
 static Timeout trafficT;
 
@@ -42,8 +45,8 @@ void monitor::setTrafficFlag(){
 		trafficT.attach(&timeoutTraffic, 1);
 }
 
-bool monitor::returnMonitor(){
-	bool bResult = true;
+bool monitor::isLampOk(){
+	m_lampOk = true;
 	mSecExe myMsec;
 	photoAnalog myPhoto;
 	UttecUtil myUtil;
@@ -73,8 +76,14 @@ bool monitor::returnMonitor(){
 	}
 	else{
 		printf("Lamp Error \r\n");
-		bResult = false;
+		m_lampOk = false;
 	}
-	return bResult;
+	return m_lampOk;
 }
+
+eMonitor_t monitor::reportMonitorResult(){
+	if(m_lampOk) return eMNoProblem;
+	else return eMLedOut;
+}
+
 

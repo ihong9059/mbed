@@ -45,35 +45,30 @@ bool photoAnalog::procPhotoA(photoType_t sType){
 		if(!(ulcount++%0x400)){
 			m_sPhotoA.current = myBH.readBH1750()/65536.0;	//0x10000 (max lux)
 //			if(!(ulTest++%200))
-			printf("Digital Photo = %f\r\n", m_sPhotoA.current);
+			printf("D_Photo:%f\r\n", m_sPhotoA.current);
 		}	
 	}
 	else{
 		m_sPhotoA.current = photoPin.read();	//check range of max, min
 			if(!(ulTest++%500)){
-				printf("Analog Photo = %f\r\n", m_sPhotoA.current);
+//				printf("A_Photo:%f, reg:%f\r\n", 				
+//					m_sPhotoA.current, m_sPhotoA.reference);
 //				if(m_sPhotoA.direction == eUp) printf("Up\r\n");
 //				else printf("Down\r\n");
 			}
 	}	
 	averageSensor(m_sPhotoA.current);
-	
-	if(m_sPhotoA.average > m_sPhotoA.next){
-		m_sPhotoA.direction = eDown;
-		m_sPhotoA.next = m_sPhotoA.reference + m_sPhotoA.rate;
-//		printf("Down\r\n");
-	}
-	else if(m_sPhotoA.average <= (m_sPhotoA.next)){
+	if(m_sPhotoA.reference > m_sPhotoA.current){//less than reference
 		m_sPhotoA.direction = eUp;
-		m_sPhotoA.next = m_sPhotoA.reference - m_sPhotoA.rate;
-//		printf("up\r\n");
+	}
+	else{ //bigger than reference
+		m_sPhotoA.direction = eDown;
 	}
 	m_sPhotoA.flag = true;
 	return m_sPhotoA.flag;
 }
 
 void photoAnalog::setSensorRate(float fLimit){
-	fLimit = 0.2;
 	m_sPhotoA.flag = false;
 	m_sPhotoA.average = 0.5;
 	m_sPhotoA.max = 0.5;

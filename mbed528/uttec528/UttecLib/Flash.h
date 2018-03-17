@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "Channel.h"
+#include "Rand.h"
 
 #define DeFieldMode	0x55aa55aa
 #define DeDaliStatus	0x20
@@ -113,6 +114,17 @@ typedef struct
 	uint8_t Low;
 	uint8_t Level;
 	uint8_t Type;
+	uint8_t pid;
+	uint8_t rxtx;
+	uint16_t gid;	
+} Role_t;
+
+typedef struct
+{	
+	uint8_t High;
+	uint8_t Low;
+	uint8_t Level;
+	uint8_t Type;
 	uint32_t Power;
 } Power_t;
 
@@ -141,8 +153,7 @@ typedef struct{
 	uint16_t gid;
 	uint16_t tbd;
 	uint8_t mac[6];
-	uint8_t Zone;
-	uint8_t CheckSum;
+	uint16_t crc;
 } ping_t;
 
 typedef struct
@@ -183,14 +194,15 @@ typedef struct
 	rfFrame_t rfFrame;
 	DaliFlash_t DaliOrg;
 	channel_t Channel;
-	uint8_t MacAddr[6];
+	Mac_t MacAddr;
 	uint16_t MacFlag;
+	uint16_t Hardware;
 	uint32_t FactoryModeId;
 	uint32_t Life;
 	uint32_t AgingCycle;
 	uint32_t UttecDevice[2];
 	float VolumeCheck;
-	Jitc_t jitcData[10];
+//	Jitc_t jitcData[10];
 } Flash_t;
 
 class Flash
@@ -207,6 +219,8 @@ public:
 	void TestFlashFunction();
 	Flash_t* getFlashFrame();
 	void resetFlash();
+	void isHardwareOk();
+	void setHardwareError(uint16_t);
 };
 //extern Flash myFlash;
 

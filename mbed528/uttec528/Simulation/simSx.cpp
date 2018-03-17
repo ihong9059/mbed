@@ -26,6 +26,7 @@ void simSx::clearSxRxFlag(){
 
 sxRxFrame_t* simSx::readLoRa(){
 	rfFrame_t* pFrame = pMySim->returnSxRxBuf();
+	m_simSxRx.sxRxFlag = pMySim->isSxRxDone();
 	m_simSxRx.ptrBuf = (sxFrame_t*)pFrame;
 	m_simSxRx.size = sizeof(rfFrame_t);
 	m_simSxRx.rssi = 66;
@@ -43,6 +44,9 @@ void simSx::setSxRxFlag(){
 	pMySim->setSxRxFlag();
 }
 
+void simSx::initSx1276(uint16_t uiGid){
+	printf("change gid %d\r\n", uiGid);
+}
 
 
 

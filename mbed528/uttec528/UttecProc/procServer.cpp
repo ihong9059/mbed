@@ -44,7 +44,19 @@ void procServer::procNewSetSub(rfFrame_t* pFrame){
 
 void procServer::procNewFactSetSub(rfFrame_t* pFrame){
 	if(myUtil.isMyAddr(pFrame,mp_rfFrame)){
+		Role_t* pNewRole = (Role_t*)&pFrame->Ctr;		
 		Flash myFlash;
+		mp_rfFrame->MyAddr.PrivateAddr = pNewRole->pid;		
+		switch(pNewRole->rxtx){
+			case eRx:
+			case eTx:
+				mp_rfFrame->MyAddr.RxTx.iRxTx = pNewRole->rxtx;
+			break;
+			default:
+				printf("Not change the role\r\n");
+		}
+		mp_rfFrame->MyAddr.GroupAddr = pNewRole->gid;
+		
 		mp_rfFrame->Ctr = pFrame->Ctr;
 		myFlash.writeFlash();
 		printf("procNewFactSetSub: Level = %d\n\r",pFrame->Ctr.Level);
@@ -129,26 +141,9 @@ bool procServer::taskServer(rfFrame_t* pFrame){
 }
 
 void procServer::taskClient(rfFrame_t* pFrame){
-	UttecLed myLed;
-	
+	UttecLed myLed;	
 	uint8_t ucCmd = pFrame->Cmd.Command;
 	switch(ucCmd){
-		case edsPowerReset:	//100
-				break;
-		case edsPowerRead:
-				break;
-		case edsMonitor:
-				break;
-		case edsControl:
-				break;
-		case edsNewSet:
-				break;
-		case edsColor:
-				break;
-		case edsCmd_485NewSet:
-				break;
-		case edsCmd_Alternative:
-				break;
 		default:
 			printf("Sx Check Cmd %d\n\r", ucCmd);
 			break;

@@ -32,22 +32,26 @@ copy절차:
 simSx* procSx1276::pMySx1276 = NULL;
 Pyd1788.cpp //#include "nrf_drv_config.h" 
 
-1. SX1276Org copy
+1. SX1276Org copy for backup
 2. delete all file in Library to be modified
 3. project의 해당 directory를 압축(필요한 File들만)
-4. procSx1276.h의 
+	** sensor, UttecApp, UttecLib, UttecProc folder copy
+	
+4. UttecProc/procSx1276.h의 
 			#include "simSx.h" remark
 		//	static simSx* pMySx1276; remark
 			static sx1276Exe* pMySx1276;	remark해제
 			
-5. procSx1276.cpp의	remark교체			
+5. UttecProc/procSx1276.cpp의	remark교체			
 			simSx* procSx1276::pMySx1276 = NULL;
 			//sx1276Exe* procSx1276::pMySx1276 = NULL;
 			
-6. uttecLib.h의 //#include "sx1276Exe.h" remark 삭제
+6. UttecApp/uttecLib.h의 //#include "sx1276Exe.h" remark 삭제
 				//	sx1276Exe* pSx1276;  remark 삭제
 				
 7. mbed의 UttecOrg의 File을 해당 directory에 Copy
 	UttecBle.cpp, UttecBle.h를 UttecApp Directory에
 	
-	
+8. 
+
+9. org--> 

@@ -48,7 +48,7 @@ void procRf::procRfRepeatCmd(rfFrame_t* pFrame){
 			pMy_mSec->m_sensorType = 
 				(eSensorType_t)pFrame->MyAddr.SensorType.iSensor;
 			pMy_mSec->sDim.target =  pFrame->Ctr.Level/100.0;		
-			printf("Rx pwm = %f ->",	pMy_mSec->sDim.target);
+//			printf("Rx pwm = %f ->",	pMy_mSec->sDim.target);
 		}
 	}
 //	printf("procRepeatCmd\n\r");

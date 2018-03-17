@@ -16,6 +16,15 @@
 
 #define DeFactoryModeTimeout 10 //60Sec
 #define DeFactoryChannel 1
+
+typedef struct{
+	bool rcu;
+	bool rf;
+	bool ble;
+	bool rs485;
+	bool sx1276;
+} productType_t;
+
 typedef enum{
 	eFactoryTestMode = 0,
 	eFactoryOutMode = 1,
@@ -59,9 +68,11 @@ private:
 	static dimFactors_t myDimFact;
 
 public:
+	static productType_t m_product;
 	static UttecFactory_t m_Factory;
 
 	UttecUtil();
+	void setProductType();
 	uint16_t gen_crc16(const uint8_t *data, uint16_t size);
 	uint8_t Hex2Dec(uint8_t cHex);
 
@@ -93,6 +104,7 @@ public:
 	char* dispRxTx(rfFrame_t*);
 	char* dispRxTx(uint8_t);
 	void dispCmd(rfFrame_t*);
+	bool SxRxCrc(rfFrame_t*);
 };
 
 #endif

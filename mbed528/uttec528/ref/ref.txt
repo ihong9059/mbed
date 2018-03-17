@@ -117,3 +117,13 @@ power: Ctr_t->Power_t(Power)
 from server: edServerReq and edsControl.. or edsCmd_Status
 
 from client: edClientAck and edsControl.. or edsCmd_Status
+
+
+2018.03.15
+setNoiseBlockTime for Sx1276 send power noise
+setProductType move to UttecUtil for procedure control in prodedure
+
+2018.03.17
+pwm dac i2c enable flag for hardware problems
+		if(testEp.m_enableFlag)
+			testEp.writeDac(sDim.pwm);
