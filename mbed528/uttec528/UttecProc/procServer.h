@@ -21,11 +21,12 @@ private:
 	static UttecBle* pMyBle;
 	static mSecExe* pMy_mSec;
 
-	void procControlSub(rfFrame_t*);
-	void procNewSetSub(rfFrame_t*);
-	void procNewFactSetSub(rfFrame_t*);
-	void procAltSub(rfFrame_t*);
+	bool procControlSub(rfFrame_t*);
+	bool procNewSetSub(rfFrame_t*);
+	bool procNewFactSetSub(rfFrame_t*);
+	bool procAltSub(rfFrame_t*);
 	bool procStatus(rfFrame_t*);
+	bool procPowerRead(rfFrame_t*);
 	void setAckFrame(rfFrame_t*);
 
 public:

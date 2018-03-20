@@ -38,6 +38,7 @@ bool monitor::getTrafficCountFlag(){
 }
 
 uint32_t monitor::getTraffic(){
+//	ulTrafficCount = 777;
 	return ulTrafficCount;
 }
 
@@ -70,8 +71,8 @@ bool monitor::isLampOk(){
 		wait(0.1);
 	}
 	photo -= myPhoto.getPhotoAnalog();
-	printf("difference = %f\r\n",photo);	
-	if(photo > 0.2){
+	printf("difference = %f\r\n",abs(photo));	
+	if(abs(photo) > 0.2){
 		printf("Ok Lamp\r\n");
 	}
 	else{
@@ -81,9 +82,22 @@ bool monitor::isLampOk(){
 	return m_lampOk;
 }
 
-eMonitor_t monitor::reportMonitorResult(){
-	if(m_lampOk) return eMNoProblem;
-	else return eMLedOut;
+eMonitor_t monitor::getMonitorResult(){
+	eMonitor_t eResult = eMNoProblem;
+	if(m_lampOk) eResult = eMNoProblem;
+	else eResult = eMLedOut;
+	return eResult;
 }
 
+uint16_t monitor::getCurrentPhoto(){
+	photoAnalog myPhoto;
+	uint16_t uiPhoto = myPhoto.getPhotoAnalog()*1024.0;
+	return uiPhoto;
+}
+
+uint32_t monitor::getPower(){
+	static uint32_t ulPower = 10;
+	ulPower++;
+	return ulPower;
+}
 

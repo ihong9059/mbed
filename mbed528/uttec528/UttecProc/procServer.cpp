@@ -26,23 +26,48 @@ procServer::procServer(uttecLib_t pLib){
 	pMyBle = pLib.pBle;
 	pMy_mSec = pLib.pMsec;
 }
-void procServer::procControlSub(rfFrame_t* pFrame){
+bool procServer::procControlSub(rfFrame_t* pFrame){
+	bool bResult = false;
 	if(myUtil.isMyAddr(pFrame,mp_rfFrame)){
 		if(myUtil.isGw(mp_rfFrame))	
 			pMy_mSec->setDirectDim(pFrame->Ctr.Level/(float)100.0);
 		else
 			pMy_mSec->setForcedDim(pFrame->Ctr.Level/(float)100.0);
+#ifdef testModePrint		
 		printf("procControlSub: Level = %d\n\r",pFrame->Ctr.Level);
+#endif
 	}
+	if(myUtil.isMstOrGw(mp_rfFrame)){
+#ifdef testModePrint		
+		printf("Return Master or Gateway to Server procControlSub Ack\n\r");
+#endif
+		setAckFrame(pFrame);
+		pFrame->Cmd.SubCmd = edsControl;
+		bResult = true;
+	}	
+	return bResult;
 }
-void procServer::procNewSetSub(rfFrame_t* pFrame){
+bool procServer::procNewSetSub(rfFrame_t* pFrame){
+	bool bResult = false;
 	if(myUtil.isMyAddr(pFrame,mp_rfFrame)){
 		pMy_mSec->sDim.forced = false;
+#ifdef testModePrint		
 		printf("procNewSetSub: Level = %d\n\r",pFrame->Ctr.Level);
+#endif
 	}
+	if(myUtil.isMstOrGw(mp_rfFrame)){
+#ifdef testModePrint		
+		printf("Return Master or Gateway to Server procNewSetSub Ack\n\r");
+#endif
+		setAckFrame(pFrame);
+		pFrame->Cmd.SubCmd = edsNewSet;
+		bResult = true;
+	}
+	return bResult;
 }
 
-void procServer::procNewFactSetSub(rfFrame_t* pFrame){
+bool procServer::procNewFactSetSub(rfFrame_t* pFrame){
+	bool bResult = false;
 	if(myUtil.isMyAddr(pFrame,mp_rfFrame)){
 		Role_t* pNewRole = (Role_t*)&pFrame->Ctr;		
 		Flash myFlash;
@@ -50,32 +75,66 @@ void procServer::procNewFactSetSub(rfFrame_t* pFrame){
 		switch(pNewRole->rxtx){
 			case eRx:
 			case eTx:
+			case eSRx:
+			case eGW:
 				mp_rfFrame->MyAddr.RxTx.iRxTx = pNewRole->rxtx;
 			break;
+			
 			default:
+#ifdef testModePrint		
 				printf("Not change the role\r\n");
+#endif
+			break;	
 		}
 		mp_rfFrame->MyAddr.GroupAddr = pNewRole->gid;
 		
-		mp_rfFrame->Ctr = pFrame->Ctr;
+		mp_rfFrame->Ctr.High = pFrame->Ctr.High;
+		mp_rfFrame->Ctr.Low = pFrame->Ctr.Low;
 		myFlash.writeFlash();
-		printf("procNewFactSetSub: Level = %d\n\r",pFrame->Ctr.Level);
+		wait(0.1);
+#ifdef testModePrint		
+		printf("Change Group: procNewFactSetSub: Level = %d\n\r",pFrame->Ctr.Level);
+#endif
 	}
+	if(myUtil.isMstOrGw(mp_rfFrame)){
+#ifdef testModePrint		
+		printf("Return Master or Gateway to Server procNewFactSetSub Ack\n\r");
+#endif
+		setAckFrame(pFrame);
+		pFrame->Cmd.SubCmd = edsCmd_485NewSet;
+		bResult = true;
+	}
+	return bResult;
 }
 
-void procServer::procAltSub(rfFrame_t* pFrame){
+bool procServer::procAltSub(rfFrame_t* pFrame){
+	bool bResult = false;
 	if(myUtil.isMyAddr(pFrame,mp_rfFrame)){
 		Flash myFlash;
 		if(mp_rfFrame->MyAddr.PrivateAddr%2 ==
 			pFrame->MyAddr.PrivateAddr%2){
 			pMy_mSec->setForcedDim(pFrame->Ctr.Level/(float)100.0);				
-			printf("Matching, procAltSub: Level = %d\n\r",
+#ifdef testModePrint		
+			printf("On, Alternative: Level = %d\n\r",
 				pFrame->Ctr.Level);
+#endif
 		}
-		else	
-			printf("Not Matching, procAltSub: Level = %d\n\r",
+		else{	
+#ifdef testModePrint		
+			printf("Off, Alternative: Level = %d\n\r",
 				mp_rfFrame->Ctr.Level);
+#endif
+		}
 	}
+	if(myUtil.isMstOrGw(mp_rfFrame)){
+#ifdef testModePrint		
+		printf("Return Master or Gateway to Server procAltSub Ack\n\r");
+#endif
+		setAckFrame(pFrame);
+		pFrame->Cmd.SubCmd = edsCmd_Alternative;
+		bResult = true;
+	}
+	return bResult;
 }
 
 void procServer::setAckFrame(rfFrame_t* pFrame){
@@ -87,50 +146,94 @@ void procServer::setAckFrame(rfFrame_t* pFrame){
 	pFrame->Cmd.Command = edClientAck;
 }
 
+#include "monitor.h"
+
 bool procServer::procStatus(rfFrame_t* pFrame){
+	monitor myMon;
 	bool bResult = false;
-	static uint16_t uiTime = 0; 
-	uiTime++;
 	
 	if(myUtil.isMyAddr(pFrame,mp_rfFrame)){
-		printf("Return Status tbd\n\r");
-		printf("procStatus: Level = %d\n\r",mp_rfFrame->Ctr.Level);
 		setAckFrame(pFrame);
-		pFrame->Cmd.Time = uiTime;
-		pFrame->Ctr.DTime = uiTime*7;
 		pFrame->Cmd.SubCmd = edsCmd_Status;
-		printf("RxTx = %d\n\r", pFrame->MyAddr.RxTx.iRxTx);
+		
+		Monitor_t* pMonitor = (Monitor_t*)&pFrame->Ctr;
+		pMonitor->traffic = myMon.getTraffic();
+		pMonitor->monitor = myMon.getMonitorResult();
+		pMonitor->photo = myMon.getCurrentPhoto();
+		
+#ifdef testModePrint		
+		printf("traffic:%d, monitor:%d, photo:%d\r\n", 
+			pMonitor->traffic, pMonitor->monitor, pMonitor->photo);
+#endif
+
 		bResult = true;
 	}
 	return bResult;
+}
+
+bool procServer::procPowerRead(rfFrame_t* pFrame){
+	monitor myMon;
+	bool bResult = false;
+	
+	if(myUtil.isMyAddr(pFrame,mp_rfFrame)){
+		setAckFrame(pFrame);
+		pFrame->Cmd.SubCmd = edsPowerRead;
+		
+		Ctr_t pCtr = pFrame->Ctr;
+		Power_t* pPower = (Power_t*)&pCtr;
+		
+		pPower->Power = myMon.getPower();
+#ifdef testModePrint		
+		printf("Return Power Value:%d\n\r", pPower->Power);
+#endif
+		pFrame->Ctr = *(Ctr_t*)pPower;
+		
+		bResult = true;
+	}
+	return bResult;
+}
+bool checkErrorPid(rfFrame_t* pFrame){
+	uint8_t ucDstPid = pFrame->Trans.SrcPrivateAddr;
+	if(!ucDstPid){
+		printf("**********Error pid and command\r\n");
+		return true;
+	}
+	else return false;
 }
 
 bool procServer::taskServer(rfFrame_t* pFrame){
 	UttecLed myLed;
 	bool bResult = false;
 	uint8_t ucCmd = pFrame->Cmd.SubCmd;
+	monitor myMon;
 	switch(ucCmd){
-		case edsPowerReset:	//100
-				break;
 		case edsPowerRead:
-				break;
-		case edsMonitor:
+			if(checkErrorPid(pFrame)) return false;
+			bResult = procPowerRead(pFrame);
 				break;
 		case edsControl:
-			procControlSub(pFrame);
+			bResult = procControlSub(pFrame);
 				break;
 		case edsNewSet:
-			procNewSetSub(pFrame);
-				break;
-		case edsColor:
+			bResult = procNewSetSub(pFrame);
 				break;
 		case edsCmd_485NewSet:
-			procNewFactSetSub(pFrame);
+			if(checkErrorPid(pFrame)) return false;
+			bResult = procNewFactSetSub(pFrame);
 				break;
 		case edsCmd_Alternative:
-			procAltSub(pFrame);
+			bResult = procAltSub(pFrame);
 				break;
+		
+		case edsMonitor:
+			if(checkErrorPid(pFrame)) return false;
+			printf("-------- Monitoring\r\n");
+			myMon.isLampOk();
+			bResult = false;
+				break;
+		
 		case edsCmd_Status:
+			if(checkErrorPid(pFrame)) return false;
 			bResult = procStatus(pFrame);
 				break;
 		default:

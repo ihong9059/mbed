@@ -37,7 +37,6 @@ sxRxFrame_t* simSx::readLoRa(){
 void simSx::sendLoRa(sxTxFrame_t sFrame){
 	rfFrame_t* pFrame = (rfFrame_t*)sFrame.ptrBuf;
 	pMySim->sendSxRf(pFrame);
-//	pMySim->sendRf(pFrame);
 }
 
 void simSx::setSxRxFlag(){

@@ -114,16 +114,17 @@ bool rs485::reform485toRx(uint8_t* p485){
 		*ucpTemp++ = ucTemp;
 //		printf("%d, ", ucTemp);
 	}
-	uiSum = myUtil.gen_crc16((uint8_t*)&frame.sRf,sizeof(rfFrame_t));
-	/*
+	uiSum = myUtil.gen_crc16((uint8_t*)&frame.sRf,sizeof(rfFrame_t));	
+	pPing = (ping_t*)&frame.sRf.Trans;
+	
+#ifdef testModePrint	
 	printf("myGid = %d, myPid = %d, sum = %d, crc = %d\n\r", frame.sRf.MyAddr.GroupAddr,
 		frame.sRf.MyAddr.PrivateAddr, frame.sum, uiSum);
-	*/
-	pPing = (ping_t*)&frame.sRf.Trans;
 	printf("srcGid = %d, srcPid = %d, srcRxTx = %s\r\n", frame.sRf.MyAddr.GroupAddr,
 		frame.sRf.MyAddr.PrivateAddr, myUtil.dispRxTx(frame.sRf.MyAddr.RxTx.iRxTx));
 	printf("dstGid = %d, dstPid = %d, dstRxTx = %s\r\n", 
 		pPing->gid, pPing->pid, myUtil.dispRxTx(pPing->rxtx));
+#endif
 	
 	if(uiSum == frame.sum){
 		bResult = true;

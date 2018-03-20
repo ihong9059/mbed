@@ -42,12 +42,16 @@ static void dispErrorRxTx(rfFrame_t* pThis, rfFrame_t* pFrame){
 	printf("from where %s, No Action\n\r",myUtil.dispRxTx(pFrame));
 }
 
+#include "procSx1276.h"
 void proc485::rs485Task(rfFrame_t* pFrame){
 	static uint32_t ulCount = 0;
+	procSx1276 mySx;
 	UttecUtil myUtil;
 	ulCount++;	
 	uint8_t ucCmd = pFrame->Cmd.Command;
+#ifdef testModePrint	
 	printf("From 485:%d -> ", ucCmd);
+#endif	
 	switch(ucCmd){
 		case edDummy:
 		case edSensor:
@@ -86,18 +90,22 @@ void proc485::rs485Task(rfFrame_t* pFrame){
 			if(myUtil.isMyAddr(pFrame, mp_rfFrame)){	// if all address are same
 				if(pMyServer->taskServer(pFrame)){			// execute taskServer
 					wait(0.01);														// if command is status
-					printf("Now ready for return\n\r");		// return process
-					pMy485->send485(pFrame, eRsUp);
+#ifdef testModePrint		
+					printf("485 Now ready for return\n\r");		// return process
+#endif
+//					pMy485->send485(pFrame, eRsUp);
 				}
 				return;
 			}
 			if(myUtil.isMstOrGw(mp_rfFrame)){
 				ping_t* pPing = (ping_t*)&pFrame->Trans;
 				pMyRf->changeGroup(pPing->gid);
-				printf("changeGroup %d\r\n", pPing->gid);
 				pMy485->send485(pFrame, eRsDown);
 				pMyRf->sendRf(pFrame);		// check whether to change channel
+#ifdef testModePrint		
+				printf("changeGroup %d\r\n", pPing->gid);
 				printf("From mst or gw send 485Frame to Tx -> end \n\r");
+#endif
 //				pMyRf->changeGroup(mp_rfFrame->MyAddr.GroupAddr); //return to origianl
 				return;
 			}			
@@ -107,6 +115,7 @@ void proc485::rs485Task(rfFrame_t* pFrame){
 				
 				wait(0.3);	//For delay, prevent to confict with Gateway Frame
 				pMyRf->sendRf(pFrame);		// check whether to change channel
+				mySx.sendSxFrame(pFrame);
 			}
 				break;
 		case edClientAck:
@@ -114,7 +123,9 @@ void proc485::rs485Task(rfFrame_t* pFrame){
 				if(myUtil.isTx(pFrame)){
 					pFrame->MyAddr.RxTx.iRxTx = eGW;
 					pMy485->send485(pFrame, eRsUp);
+#ifdef testModePrint		
 					printf("Gw: from tx, send 485Frame to Mst -> end\n\r");
+#endif
 				}
 				else dispErrorRxTx(mp_rfFrame, pFrame);
 				return;

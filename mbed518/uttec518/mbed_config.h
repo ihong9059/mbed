@@ -31,5 +31,6 @@
 #define MBED_CONF_PLATFORM_STDIO_CONVERT_NEWLINES   0               // set by library:platform
 
 #define my51822	1
+#define testModePrint 1
 
 #endif

@@ -20,9 +20,6 @@
 #include "simSx.h"
 #include "nrf_ble_gap.h"
 
-//#include "bh1750.h"
-#include "monitor.h"
-
 DigitalIn CTS(p10, PullDown);
 
 UttecBle myBle;
@@ -75,8 +72,6 @@ Serial Uart(p9,p11);
 	printf("high =%d, low =%d\n\r", pMyFrame->Ctr.High,
 		pMyFrame->Ctr.Low);
 
-//	while(1);
-	
 	UttecUtil myUtil;
 	DimmerRf myRf(&myFlash);
 	myRf.initRfFrame(); 
@@ -137,13 +132,9 @@ UttecLed myLed;
 			myLed.blink(eRfLed, eRfBlink);
 			myRf.clearRxFlag();
 			rfFrame_t* pFrame = myRf.returnRxBuf();
-			myUtil.dispCmd(pFrame);
 			mProcRf.taskRf(pFrame);		
-			
-//			printf("Count = %d\r\n", 	pFrame->Trans.DstGroupAddr);
 		}
-/*		
-		static uint32_t ulBlock = 0;
+
 		if(0)
 		if(myUtil.m_product.sx1276)
 		if(mySim.isSxRxDone()){		//For sx1276 Receive
@@ -163,23 +154,20 @@ UttecLed myLed;
 			if(mProcSx1276.isMyGroup(pMyFrame, psRf))
 				mProcSx1276.sx1276Task(psRf);
 		}
+		
 		if(myUtil.m_product.rs485)
 		if(my485.is485Done()){		//For rs485 Receive			
 			my485.clear485Done();
 			rfFrame_t* p485Frame = my485.return485Buf();
 			mProc485.rs485Task(p485Frame);
-//			my485.send485(pMyFrame, eRsDown);	//For Test Only
 		}		
+/*		
 */		
 				
 		if(my_mSec.returnSensorFlag()){		//For sensor Receive
 			my_mSec.clearSensorFlag();
 			if(!myUtil.isRx(pMyFrame))
 				myRf.sendRf(pMyFrame);
-						
-//			my485.send485(pFrame);
-//			mySx1276.sendSx1276(pFrame);
-//			myBle.sendBle(pFrame);
 		}
 		
 		if(tick_mSec){
@@ -191,77 +179,12 @@ UttecLed myLed;
 		if(tick_Sec){		
 			tick_Sec = false;			
 			mProcSec.secTask(pMyFrame);	
-//			myLed.blink(eSensLed, eRfBlink);
-//			printf("db = %x\r\n",myRf.getRfFactor().dbm);
-//			myLed.blink(eRfLed, eRfBlink);
-//			my_mSec.setDirectDim(0.3);
 			
-			/*			
-			static uint32_t ulCount = 0;
-			static uint32_t ulNext = 0;
-			static uint32_t ucMode = 0;
-			uint8_t ucConst = 10;
-			uint8_t ucNext=ucConst;
-			if(ulCount == ulNext){
-				ulNext += ucNext;
-				ucMode++;
-				myLed.setAlarmTime(500);
-			}
-			printf("Mode = %d, Next = %d, target = %f, pwm = %f\r\n", ucMode%7,
-			 ucNext, my_mSec.sDim.target, my_mSec.sDim.current);
-			switch(ucMode%7){
-				case 0:
-						ucNext = ucConst;
-						my_mSec.sDim.target = 1.0;
-					break;
-				case 1:
-						ucNext = ucConst;
-						my_mSec.sDim.target = 0.1;
-					break;
-				case 2:
-						ucNext = ucConst;
-						my_mSec.sDim.target = 0.7;
-					break;
-				case 3:
-						ucNext = ucConst;
-						my_mSec.sDim.target = 0.3;
-					break;
-				case 4:
-						ucNext = ucConst;
-						my_mSec.sDim.target = 1.0;
-					break;
-				case 5:
-						ucNext = ucConst;
-						my_mSec.sDim.target = 0.0;
-					break;
-				case 6:
-						ucNext = ucConst;
-						my_mSec.sDim.target = 0.5;
-					break;
-			}
-			ulCount++;
-			monitor myM;
-			myM.returnMonitor();
-			bTest = !bTest;
-			if(bTest) myLed.setAlarmTime(500);
-			if(myM.getTrafficCountFlag()){ 
-				printf("Traffic = %d\r\n", myM.getTraffic());
-			}
-			printf("high:%d, low:%d, rxtx:%d\r\n", pMyFrame->Ctr.High,
-			pMyFrame->Ctr.Low, pMyFrame->MyAddr.RxTx.iRxTx);
-			*/
 		}		
 	}
 }
 
-void temp(){
-	while(1){
-		printf("Test\r\n");
-		wait(1);
-	}
-}
 
-/*		
 //#include "bh1750.h"
 //#include "Pyd1788.h"
 //#include "eprom.h"
@@ -273,6 +196,7 @@ void temp(){
 //eprom myEprom;
 //HX711 scale;
 
+/*		
 
 		if(my485.isAnyDone()){
 			if(my485.is485Done()){		//For rs485 Receive
@@ -280,19 +204,6 @@ void temp(){
 				printf("\n\ris485Done\n\r");
 				mProc485.rs485Task(my485.return485Buf());
 			}		
-
-		if(my485.isAnyDone()){		//For Test
-			uint32_t ulMyAdd = 50000;
-			uint32_t ulYourAdd = 60000;
-			if(my485.isTestDone()){		//For test
-				my485.clearTestDone();
-				uint32_t uiResult = my485.returnTestData();
-				printf("Test Data: %d\n\r",uiResult);
-				if(uiResult<ulMyAdd) myTest.setTestReceiveFrameByNum(uiResult);
-				else if((uiResult<ulYourAdd)&&(uiResult>=ulMyAdd)) myTest.setTestMyAddr(uiResult);
-				else myTest.setTestYourAddr(uiResult);
-			}					
-		}
 		
 		if(myRcu.isRcuReady()&&myRcu.isUttecCode()){
 			myRcu.returnUtRcuCode(); 

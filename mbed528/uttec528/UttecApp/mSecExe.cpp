@@ -42,7 +42,8 @@ mSecExe::mSecExe(DimmerRf* pRf){
 //	photoA.setSensorRate(0.2);
 	photoA.setSensorRate(pyFrame->Ctr.DTime/1024.0);
 	m_pRf = pRf;
-	dimer.period_us(300);		//set Pwm Freq
+	dimer.period_us(3000);		//set Pwm Freq
+//	dimer.period_us(300);		//set Pwm Freq
 //	dimer.period_us(25);		//set Pwm Freq
 	dimer = 0.3;			//set Pwm initial duty
 }
@@ -79,12 +80,15 @@ void mSecExe::procDim(){
 void mSecExe::switchDimType(rfFrame_t* pFrame){
 	dac testEp;
 	static uint32_t ulCount = 0;
+	static float fBefore = 0;
 	if(sDim.forced){	//when forced Mode
+		if(fBefore == sDim.target) return;
 		if((ulCount++%20)) return;
 		dimer = (float)1.0 - sDim.target;
 		sDim.pwm = sDim.target;
 		if(testEp.m_enableFlag)
 			testEp.writeDac(sDim.pwm);
+		fBefore = sDim.target;
 		return;
 	}
 	switch(m_sensorType){
@@ -140,13 +144,9 @@ void mSecExe::switchSensorType(rfFrame_t* pFrame){
 					ulTimeout = TimeoutForPirRepeat; //0.5Sec
 					sDim.target = pFrame->Ctr.High/100.0;
 					sDim.dTime = pFrame->Ctr.DTime*1000;
-					
-					printf("\n\rFrom Pir:");
-//					printf("\n\r***************target = %0.3f, %d\n\r", sDim.target, sDim.dTime);
 					pFrame->Cmd.Command = edSensor;
 					setSensorFlag();
 					myMon.setTrafficFlag();
-//					printf("Sens = %0.3f\n\r", sDim.target);
 				}
 			}
 			break;
@@ -200,7 +200,6 @@ void mSecExe::switchSensorType(rfFrame_t* pFrame){
 					setSensorFlag();
 					pFrame->Ctr.Level = sDim.target*100;
 					pFrame->Cmd.Command = edDayLight;
-					printf("\n\rFrom Pir:");
 					/*
 					printf("------- Vol = %0.3f, photo = %f\n\r", 
 						sDim.target, photoA.m_sPhotoA.current);
@@ -222,19 +221,16 @@ void mSecExe::msecTask(rfFrame_t* pFrame){	//mSecStart
 	if(m_noiseBlockTime) m_noiseBlockTime--;
 	
 	if(!myUtil.isMstOrGw(pFrame)){
-		if(isRealMode&&(!m_noiseBlockTime))
+		if(isRealMode&&(!m_noiseBlockTime)&&(!sDim.forced))
 			switchSensorType(pFrame);
 		switchDimType(pFrame);
 	}
 	myLed.taskLed();
 	if(!(ulCount%500)){
-//		testPwm();
-//		testLed();
 		pFrame->Ctr.Level = sDim.target*100;
 		dimFactors_t sFactors = {sDim.forced,m_sensorType,
 			sDim.target,sDim.current}; 
 		myUtil.getDimFactor(sFactors);
-//		printf("getDimFactor\n\r");
 	}
 }
 bool mSecExe::returnSensorFlag(){
@@ -276,6 +272,9 @@ void mSecExe::testPwm(){
 }
 
 void mSecExe::setDirectDim(float dim){
+	dac testEp;
 	dimer = dim;
+	if(testEp.m_enableFlag)
+		testEp.writeDac(dim);
 }
 

@@ -2,6 +2,8 @@
 
 #include "UttecUtil.h"
 
+static Serial mySer(p9,p11);
+ 
 dimFactors_t UttecUtil::myDimFact = {0,};
 
 productType_t UttecUtil::m_product = {0,};
@@ -149,30 +151,39 @@ void UttecUtil::dispSec(rfFrame_t* pFrame, bool bCount){
 	ulTime++;
 	
 	if(bCount)
-//		if(ulCount++%2) { printf("-"); return; }
-		if(ulCount++%2) {return; }
-	
-	if(m_Factory.mode == eFactoryTestMode)
-		printf("eFactoryTestMode\r\n");
-	else if(m_Factory.mode == eFactoryOutMode)
-		printf("eFactoryOutMode\r\n");
-	else printf("eFieldMode\r\n");
-	
-	printf("G:%d P:%d RxTx:%s", 
-	pFrame->MyAddr.GroupAddr, pFrame->MyAddr.PrivateAddr,
-	dispRxTx(pFrame->MyAddr.RxTx.iRxTx));
-	printf(" S:%s\r\n",
-	dispSensor(pFrame->MyAddr.SensorType.iSensor));
-	printf("H:%d, L:%d, Le:%d, D:%d ", pFrame->Ctr.High,
-		pFrame->Ctr.Level ,pFrame->Ctr.Low, pFrame->Ctr.DTime );
-	dispTime(ulTime);
+	switch(ulTime%3){
+		case 0:
+			if(m_Factory.mode == eFactoryTestMode)
+				printf("eFactoryTestMode\r\n");
+			else if(m_Factory.mode == eFactoryOutMode)
+				printf("eFactoryOutMode\r\n");
+			else printf("eFieldMode\r\n");
+		break;
 		
-	if(!isMstOrGw(pFrame)){	
-		printf("\r\nDim:%s, ",dispForced(myDimFact.forced));
-		printf("Type:%s, ", dispSensor(myDimFact.sensorType));
-		printf("tagetPwm = %0.3f, nowPwm = %0.3f\r\n", 
-			myDimFact.targetValue, myDimFact.nowValue);
+		case 1:
+			printf("G:%d P:%d RxTx:%s", 
+			pFrame->MyAddr.GroupAddr, pFrame->MyAddr.PrivateAddr,
+			dispRxTx(pFrame->MyAddr.RxTx.iRxTx));
+			printf(" S:%s\r\n",
+			dispSensor(pFrame->MyAddr.SensorType.iSensor));
+		break;
+		
+		case 2:
+			printf("H:%d, L:%d, Le:%d, D:%d ", pFrame->Ctr.High,
+				pFrame->Ctr.Low, pFrame->Ctr.Level , pFrame->Ctr.DTime );
+			dispTime(ulTime);
+		break;
+		
+		case 3:
+			if(!isMstOrGw(pFrame)){	
+				printf("\r\nDim:%s, ",dispForced(myDimFact.forced));
+				printf("Type:%s, ", dispSensor(myDimFact.sensorType));
+				printf("tagetPwm = %0.3f, nowPwm = %0.3f\r\n", 
+					myDimFact.targetValue, myDimFact.nowValue);
+			}	
+		break;
 	}	
+	
 }
 
 void UttecUtil::testProc(uint8_t ucName, uint32_t ulValue){
@@ -337,13 +348,21 @@ void UttecUtil::dispCmdandSub(char* cpCmd, char* cpSub, rfFrame_t* pFrame){
 }
 void UttecUtil::dispCmd(rfFrame_t* pFrame){
 	switch(pFrame->Cmd.Command){
-		case edSensor: printf("Cmd is edSensor\r\n");
+		case edSensor: 
+			Putchar('S');
+//			printf("Cmd is edSensor\r\n");
 			break;
-		case edRepeat: printf("Cmd is edRepeat\r\n");
+		case edRepeat: 
+			Putchar('R');
+		//printf("Cmd is edRepeat\r\n");
 			break;
-		case edVolume: printf("Cmd is edVolume\r\n");
+		case edVolume: 
+			Putchar('V');
+//			printf("Cmd is edVolume\r\n");
 			break;
-		case edDayLight: printf("Cmd is edDayLight\r\n");
+		case edDayLight: 
+			Putchar('D');
+//			printf("Cmd is edDayLight\r\n");
 			break;
 	}
 }
@@ -367,17 +386,20 @@ bool UttecUtil::isMyGroup(rfFrame_t* pSrc, rfFrame_t* pMy){
 
 bool UttecUtil::isMyAddr(rfFrame_t* pSrc, rfFrame_t* pMy){
 	ping_t* pDst = (ping_t*)&pSrc->Trans;
+#ifdef testModePrint	
 	printf("dst gid =%d, pid = %d, rxtx =%d\r\n",
 	pDst->gid, pDst->pid, pDst->rxtx);
-	
+#endif	
 	if((pMy->MyAddr.GroupAddr == pDst->gid)&&
 		(pMy->MyAddr.PrivateAddr == pDst->pid)
 		&&(pMy->MyAddr.RxTx.iRxTx == pDst->rxtx)){	
+#ifdef testModePrint		
 			printf(" All Address Matching -> ");
+#endif
 			return true;
 		}
 	else if((pMy->MyAddr.GroupAddr == pDst->gid)&&
-		(!pDst->pid)){
+		(!pDst->pid)&&(!isMstOrGw(pMy))){
 			printf(" Tx Matching and I'm this group -> ");
 			return true;
 	}		
@@ -446,5 +468,9 @@ bool UttecUtil::SxRxCrc(rfFrame_t* pFrame){
 	}
 	return true; 
 
+}
+
+void UttecUtil::Putchar(char ucChar){
+	mySer.putc(ucChar);
 }
 

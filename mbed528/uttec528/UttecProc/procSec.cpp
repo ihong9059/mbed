@@ -70,7 +70,6 @@ void procSec::secTask(rfFrame_t* pFrame){
 	if(myUtil.isFactoryOutMode()){
 		pMy_mSec->setForcedDim(pFrame->Ctr.High/100.0);
 	}
-//	printf("Freq = %d\r\n", NRF_RADIO->FREQUENCY);
 	proc1Sec();	
 	if(!myUtil.isMstOrGw(mp_rfFrame))
 		myUtil.dispSec(pFrame, true);

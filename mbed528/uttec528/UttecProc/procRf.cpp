@@ -76,7 +76,8 @@ void procRf::resendSensorByRfRepeater(rfFrame_t* pFrame){
 
 void procRf::procRfSensorCmd(rfFrame_t* pFrame){
 	if(myUtil.isMstOrGw(mp_rfFrame)){
-		printf("No Action: isMstOrGw\n\r");
+			myUtil.Putchar('>');
+//		printf("No Action: isMstOrGw\n\r");
 		return;
 	}
 	if(myUtil.isRx(mp_rfFrame)){
@@ -101,7 +102,8 @@ void procRf::procRfSensorCmd(rfFrame_t* pFrame){
 
 void procRf::procRfVolumeCmd(rfFrame_t* pFrame){
 	if(myUtil.isMstOrGw(mp_rfFrame)){
-		printf("No Action: isMstOrGw\n\r");
+			myUtil.Putchar('>');
+//		printf("No Action: isMstOrGw\n\r");
 		return;
 	}
 	if(myUtil.isTx(mp_rfFrame)) conflictTx();
@@ -116,7 +118,8 @@ void procRf::procRfVolumeCmd(rfFrame_t* pFrame){
 
 void procRf::procRfDaylightCmd(rfFrame_t* pFrame){
 	if(myUtil.isMstOrGw(mp_rfFrame)){
-		printf("No Action: isMstOrGw\n\r");
+			myUtil.Putchar('>');
+//		printf("No Action: isMstOrGw\n\r");
 		return;
 	}
 	if(myUtil.isTx(mp_rfFrame)) conflictTx();
@@ -274,9 +277,9 @@ void procRf::returnToServer(rfFrame_t* pFrame){
 		pMy485->send485(pFrame, eRsUp);
 	}			
 	else if(myUtil.isTx(mp_rfFrame)){
-//		pMyRf->sendRf(pFrame);		// check whether to change channel
+		pMyRf->sendRf(pFrame);		// check whether to change channel
+//		pMy485->send485(pFrame, eRsUp);
 		printf("Tx: from Tx, SRx Rx, send 485Frame to Mst -> end\n\r");
-		pMy485->send485(pFrame, eRsUp);
 	}
 	else{
 		pMyRf->sendRf(pFrame);		// check whether to change channel
@@ -289,6 +292,7 @@ void procRf::returnToServer(rfFrame_t* pFrame){
 void procRf::taskRf(rfFrame_t* pFrame){
 	UttecLed myLed;
 	uint8_t ucCmd = pFrame->Cmd.Command;
+	if(!(myUtil.isMstOrGw(mp_rfFrame))) myUtil.dispCmd(pFrame);
 //	printf("From taskRf:%d -> ", ucCmd);
 	switch(ucCmd){
 		case edDummy:
@@ -324,7 +328,7 @@ void procRf::taskRf(rfFrame_t* pFrame){
 			if(myUtil.isMyAddr(pFrame, mp_rfFrame)){	// if all address are same
 				if(pMyServer->taskServer(pFrame)){			// execute taskServer
 					wait(0.01);														// if command is status
-					printf("Now ready for return\n\r");		// return process
+					printf("Rf Now ready for return\n\r");		// return process
 					returnToServer(pFrame);
 //					pMy485->send485(pFrame, eRsUp);
 				}
@@ -345,7 +349,8 @@ void procRf::taskRf(rfFrame_t* pFrame){
 			}
 				break;
 		case edClientAck:
-			returnToServer(pFrame);
+			if(myUtil.isMstOrGw(mp_rfFrame))
+				returnToServer(pFrame);
 		/*
 			if(myUtil.isMstOrGw(mp_rfFrame)){
 				pMy485->send485(pFrame, eRsUp);

@@ -105,6 +105,7 @@ public:
 	char* dispRxTx(uint8_t);
 	void dispCmd(rfFrame_t*);
 	bool SxRxCrc(rfFrame_t*);
+	void Putchar(char);
 };
 
 #endif

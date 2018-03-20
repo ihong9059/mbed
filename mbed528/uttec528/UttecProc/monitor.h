@@ -26,7 +26,9 @@ public:
 	void setTrafficFlag();
 	bool getTrafficCountFlag();
 	void clearTrafficCountFlag();
-	eMonitor_t reportMonitorResult();
+	eMonitor_t getMonitorResult();
+	uint16_t getCurrentPhoto();
+	uint32_t getPower();
 };	
 
 #endif
